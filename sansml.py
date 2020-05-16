@@ -13,23 +13,48 @@ class Net(nn.Module):
     channels = 3
     height = 480
     width = 640
+    num_classes = 5
 
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d((2, 2))
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
+        self.conv1 = nn.Conv2d(in_channels=3, out_channels=6, kernel_size=3, stride=1, padding=1)
+        self.relu1 = nn.ReLU()
+
+        self.conv2 = nn.Conv2d(in_channels=6, out_channels=16, kernel_size=3, stride=1, padding=1)
+        self.relu2 = nn.ReLU()
+        self.pool = nn.MaxPool2d(kernel_size=2)
+
+        # self.fc1 = nn.Linear(16 * 5 * 5, 120)
+        # self.fc2 = nn.Linear(120, 84)
+        # self.fc3 = nn.Linear(84, 5)
+        # self.relu1 = nn.ReLU()
+        # self.relu2 = nn.ReLU()
+        # self.fc = nn.Linear(in_features=320 * 240 * 16, out_features=self.num_classes)
+        self.fc1 = nn.Linear(in_features=307200 , out_features=120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 5)
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x.float())))
         x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 16 * 5 * 5)
+        x = x.view(-1, 307200 )
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
+
+        # output = self.conv1(x.float())
+        #
+        # output = self.relu1(output)
+        #
+        # output = self.conv2(output)
+        # output = self.relu2(output)
+        #
+        # output = self.pool(output)
+        #
+        # output = output.view(-1, 1228800)
+        #
+        # output = self.fc(output)
+
         return x
 
 
@@ -37,36 +62,31 @@ classes = ['up', 'down', 'left', 'right', 'none']
 
 
 class DataSet(object):
-    def __init__(self, transforms):
-        self.root = ""
-        self.transforms = transforms
+    def __init__(self, root):
+        self.root = root
         # load all image files, sorting them to
         # ensure that they are aligned
-        self.imgs = list(sorted(os.listdir(os.path.join(self.root, "images"))))
+        self.imgs = list(sorted(os.listdir(os.path.join("", self.root))))
 
     def __getitem__(self, idx):
         # load images
-        img_path = os.path.join(self.root, "images", self.imgs[idx])
+        img_path = os.path.join("", self.root, self.imgs[idx])
         img = cv2.imread(img_path)
-        img = np.moveaxis(img, -1, 0)
-
+        try:
+            img = np.moveaxis(img, -1, 0)
+        except Exception as e:
+            print(img_path)
+            raise e
         img_label = img_path.split("\\")[1]
         img_label = img_label.split(".")[0]
         img_label = ''.join([i for i in img_label if not i.isdigit()])
         img_label = classes.index(img_label)
         # print("Label: " + img_label + " Index: " + str(idx))
         # there is only one class
-
-        if self.transforms is not None:
-            img, target = self.transforms(img, img_label)
-
         return img, img_label
 
     def __len__(self):
         return len(self.imgs)
-
-
-import matplotlib.pyplot as plt
 
 
 import torchvision.transforms as transforms
@@ -78,8 +98,8 @@ def main():
     transform = transforms.Compose([transforms.ToTensor()]) # Defing PyTorch Transform
 
 
-    trainset = DataSet(None)
-    testset = DataSet(None)
+    trainset = DataSet("backup")
+    testset = DataSet("backup")
 
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
                                               shuffle=True, num_workers=2)
@@ -89,7 +109,7 @@ def main():
 
     net = Net()
     VERY_NICE_criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=0.0001, momentum=0.9)
+    optimizer = optim.SGD(net.parameters(), lr=0.00001, momentum=0.9)
 
     for epoch in range(2):  # loop over the dataset multiple times
 
@@ -109,7 +129,7 @@ def main():
 
             # print statistics
             running_loss += loss.item()
-            if i % 100 == 99:  # print every 2000 mini-batches
+            if i % 10 == 9:  # print every 2000 mini-batches
                 print('[%d, %5d] loss: %.3f' %
                       (epoch + 1, i + 1, running_loss))
                 running_loss = 0.0
@@ -130,17 +150,20 @@ def AAAAAAA():
         i += 1
 
 def test():
-    data = DataSet(None)
+    import random
+    data = DataSet("backup")
     # trainloader = iter(torch.utils.data.DataLoader(DataSet(None), batch_size=4,
     #                                           shuffle=True, num_workers=2))
-    image, label = data[300]
-    print(label)
     net = Net()
     PATH = "sans_model.pth"
     net.load_state_dict(torch.load(PATH))
-    output = net(torch.tensor([image]))
-    _, predicted = torch.max(output, 1)
-    print(predicted)
+    for i in range(20):
+        image, label = data[random.randint(0, 1252)]
+        output = net(torch.tensor([image]))
+        _, predicted = torch.max(output, 1)
+        predicted = predicted[0].item()
+        print(label, predicted)
+        print(label is predicted)
 
 
 if __name__ == '__main__':
