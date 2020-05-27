@@ -1,0 +1,8 @@
+Steps in program runime:
+1: take a frame from the camera
+2: apply color filtering to filter out all non-skin colors
+3: resize the frame and transform the axis of the frame to make it friendly to the model
+4: get a direction from the model
+5: move the mouse in the direction of the model
+6: if a large part of the skin is connected in the frame (like if doing an X pose), see it as a left click input
+7: make sure a left click isnt pressed more than 2 times a second
