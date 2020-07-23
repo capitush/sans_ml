@@ -1,4 +1,4 @@
-download the latest model, sans_model7c.
+download the latest model, sans_model8.
 
 for keyboard presses, download sans_controller.
 
