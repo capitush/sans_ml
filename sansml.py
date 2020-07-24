@@ -13,7 +13,7 @@ class Net(nn.Module):
     channels = 3
     height = 480
     width = 640
-    num_classes = 5
+    num_classes = 9
 
     def __init__(self, width, height):
         super(Net, self).__init__()
@@ -26,15 +26,9 @@ class Net(nn.Module):
         self.relu2 = nn.ReLU()
         self.pool = nn.MaxPool2d(kernel_size=2)
 
-        # self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        # self.fc2 = nn.Linear(120, 84)
-        # self.fc3 = nn.Linear(84, 5)
-        # self.relu1 = nn.ReLU()
-        # self.relu2 = nn.ReLU()
-        # self.fc = nn.Linear(in_features=320 * 240 * 16, out_features=self.num_classes)
         self.fc1 = nn.Linear(in_features=self.width * self.height, out_features=120)
         self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 5)
+        self.fc3 = nn.Linear(84, self.num_classes)
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x.float())))
@@ -44,23 +38,10 @@ class Net(nn.Module):
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
 
-        # output = self.conv1(x.float())
-        #
-        # output = self.relu1(output)
-        #
-        # output = self.conv2(output)
-        # output = self.relu2(output)
-        #
-        # output = self.pool(output)
-        #
-        # output = output.view(-1, 1228800)
-        #
-        # output = self.fc(output)
-
         return x
 
 
-classes = ['up', 'down', 'left', 'right', 'none']
+classes = ['up', 'down', 'left', 'right', 'upleft', 'upright', 'downleft', 'downright', 'none']
 
 
 class DataSet(object):
@@ -87,9 +68,7 @@ class DataSet(object):
             if img_label[i].isdigit():
                 img_label = img_label[:i]
                 break
-        # img_label = ''.join([i for i in img_label if not i.isdigit()])
         img_label = classes.index(img_label)
-        # print("Label: " + img_label + " Index: " + str(idx))
         # there is only one class
         return img, img_label
 
@@ -104,8 +83,7 @@ import torch.optim as optim
 def main(root):
     # get some random training images
     # transform = transforms.Compose([transforms.ToTensor()]) # Defing PyTorch Transform
-    width, height = int(640/8), int(480/8)
-
+    width, height = int(640/4), int(320/4)
     trainset = DataSet(root, width, height)
 
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
@@ -139,19 +117,8 @@ def main(root):
                 running_loss = 0.0
 
     print('Finished Training')
-    PATH = "sans_model6.pth"
+    PATH = "sans_model8.pth"
     torch.save(net.state_dict(), PATH)
-
-# def AAAAAAA():
-#     root = "C:\\Users\\1\PycharmProjects\SERVER\ML\sans_ml\images\\"
-#     imgs = list(os.listdir("images"))
-#     i = 0
-#     for image in imgs:
-#         img = cv2.imread(root + image)
-#         img = cv2.resize(img, (32, 32))
-#         cv2.imwrite(root + image, img)
-#         print(i * 100 / len(imgs))
-#         i += 1
 
 
 def renameFile(root):
@@ -192,7 +159,7 @@ def test():
 
 
 if __name__ == '__main__':
-    main("images5")
+    main("images8")
     # AAAAAAA()
     # test()
     # renameFile("images3\\")
